@@ -19,6 +19,8 @@ class numberCNN(nn.Module):
         # 这是一个卷积网络，包括卷积层，激活函数，池化层
         # 可以把这些放到sequential里，也可以一步一步放在forward里
         self.conv1 = nn.Sequential(
+            # 因为手写图片是单通道图像，所以2D卷积即可
+            # [28,28,1]→[28,28,16] 相当于用了16个卷积核
             nn.Conv2d(
                 in_channels=1,
                 out_channels=16,
@@ -27,14 +29,17 @@ class numberCNN(nn.Module):
                 padding=2
             ),
             nn.ReLU(),
+            # [28,28,16]→[14,14,16]
             nn.MaxPool2d(kernel_size=2)
         )
-        self.conv2 = nn.Sequential(  # 下一个的输入 (16, 14, 14)
-            nn.Conv2d(16, 32, 5, 1, 2),  # 输出 (32, 14, 14)
-            nn.ReLU(),  # relu层
-            nn.MaxPool2d(2),  # 输出 (32, 7, 7)
+        self.conv2 = nn.Sequential(
+            # [14,14,16]→[14,14,32]
+            nn.Conv2d(16, 32, 5, 1, 2),
+            nn.ReLU(),
+            # [14,14,32]→[7,7,32]
+            nn.MaxPool2d(2),
         )
-        # 直接做一层全连接
+        # 直接降成一维，做全连接
         self.out = nn.Linear(32 * 7 * 7, 10)  # 全连接层得到的结果
 
     def forward(self, x: torch.Tensor):
@@ -47,7 +52,7 @@ class numberCNN(nn.Module):
 
 def accuracy(predictions, labels):
     # predictions的data为一个64*10的矩阵,dim为1，即为按行取最大值
-    # 返回值为2个，第0个为最大值tensor，第1个为对应的索引tensor
+    # max()返回值为2个，第0个为最大值tensor，第1个为对应的索引tensor
     # 这里的索引刚好对应了数字本身，如索引是9，对应的数字就是9
     pred = torch.max(predictions.data, 1)[1]
     # view_as，形状变为相同，这里的rights依然是一个tensor
@@ -62,18 +67,18 @@ def start():
     num_epochs = 3  # 训练的总循环周期
     batch_size = 64  # 一个batch的大小，64张图片
 
-    # 训练集
+    # 训练集和测试集。
+    # download=True代表自动下载。
     train_dataset = datasets.MNIST(root='./data',
                                    train=True,
                                    transform=transforms.ToTensor(),
                                    download=True)
-    # 测试集，都会自动下载
     test_dataset = datasets.MNIST(root='./data',
                                   train=False,
                                   transform=transforms.ToTensor(),
                                   download=True)
+    
     # 构建batch数据
-
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=batch_size,
                               shuffle=True)
@@ -89,16 +94,19 @@ def start():
     optimizer = optim.Adam(myModel.parameters(), lr=0.001)
 
     for epoch in range(num_epochs):
-
         train_right = []
         for idx, data in enumerate(train_loader):
             inputs, labels = data
+            # 定义训练模块
             myModel.train()
+
+            # 前向传播
             outputs = myModel(inputs)
             loss = criterion(outputs, labels)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
             right = accuracy(outputs, labels)
             # 每个批次，将正确个数记录，和总个数
             train_right.append(right)
