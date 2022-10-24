@@ -142,38 +142,44 @@ def flower_start():
         cat_to_name = json.load(f)
 
     data_transforms = {
-        'train': transforms.Compose([transforms.RandomRotation(45),  # 随机旋转，-45到45度之间随机选
-                                     transforms.CenterCrop(224),  # 从中心开始裁剪，只得到一张图片
-                                     transforms.RandomHorizontalFlip(p=0.5),  # 随机水平翻转 概率为0.5
-                                     transforms.RandomVerticalFlip(p=0.5),  # 随机垂直翻转
-                                     transforms.ColorJitter(brightness=0.2, contrast=0.1, saturation=0.1, hue=0.1),
-                                     # 参数1为亮度，参数2为对比度，参数3为饱和度，参数4为色相
-                                     transforms.RandomGrayscale(p=0.025),  # 概率转换成灰度率，3通道就是R=G=B
-                                     transforms.ToTensor(),
-                                     # 迁移学习，用别人的均值和标准差
-                                     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  # 均值，标准差
-                                     ]),
-        'valid': transforms.Compose([transforms.Resize(256),
-                                     transforms.CenterCrop(224),
-                                     transforms.ToTensor(),
-                                     # 预处理必须和训练集一致
-                                     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-                                     ]),
+        'train': transforms.Compose(
+          [
+            transforms.RandomRotation(45),  # 随机旋转，-45到45度之间随机选
+            transforms.CenterCrop(224),  # 从中心开始裁剪，只得到一张图片
+            transforms.RandomHorizontalFlip(p=0.5),  # 随机水平翻转 概率为0.5
+            transforms.RandomVerticalFlip(p=0.5),  # 随机垂直翻转
+            transforms.ColorJitter(brightness=0.2, contrast=0.1, saturation=0.1, hue=0.1),
+            # 参数1为亮度，参数2为对比度，参数3为饱和度，参数4为色相
+            transforms.RandomGrayscale(p=0.025),  # 概率转换成灰度率，3通道就是R=G=B
+            transforms.ToTensor(),
+            # 迁移学习，用别人的均值和标准差
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  
+          ]),
+        'valid': transforms.Compose(
+          [
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            # 预处理必须和训练集一致
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+          ]),
     }
 
     batch_size = 8
 
     # train和valid的图片，做transform之后用字典保存
-    image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in
-                      ['train', 'valid']}
+    image_datasets = {x: datasets.ImageFolder(
+      os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'valid']}
+
     # 批量处理，这里都是tensor格式（上面compose）
-    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True) for x in
-                   ['train', 'valid']}
+    dataloaders = {x: torch.utils.data.DataLoader(
+      image_datasets[x], batch_size=batch_size, shuffle=True) for x in ['train', 'valid']}
     dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'valid']}
-    print(dataset_sizes)
+    print(f"dataset_sizes: {dataset_sizes}")
+    
     # 样本数据的标签
     class_names = image_datasets['train'].classes
-    # print(class_names)
+    print(f"class_names: {class_names}")
 
     # 随便画一下，看一下处理后的图像
     # fig = plt.figure(figsize=(20, 12))
@@ -218,13 +224,14 @@ def flower_start():
     model_ft.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
 
-    model_ft, val_acc_history, train_acc_history, valid_losses, train_losses, LRs = wz_model_train(model_ft,
-                                                                                                   dataloaders,
-                                                                                                   criterion,
-                                                                                                   optimizer,
-                                                                                                   scheduler, filename,
-                                                                                                   device,
-                                                                                                   num_epochs=5)
+    model_ft, val_acc_history, train_acc_history, valid_losses, train_losses, LRs = wz_model_train(
+      model_ft,
+      dataloaders,
+      criterion,
+      optimizer,
+      scheduler, filename,
+      device,
+      num_epochs=5)
 
 
 def wz_model_train(model, dataloaders, criterion, optimizer, scheduler, filename: str, device: torch.device, num_epochs=10, is_inception=False):
