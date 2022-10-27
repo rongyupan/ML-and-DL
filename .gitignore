@@ -11,3 +11,6 @@ gen
 */__pycache__
 __pycache__
 wz.pth
+
+/pytorch/RNN/THUCNews/log
+/pytorch/RNN/THUCNews/saved_dict

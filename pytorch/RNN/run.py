@@ -16,11 +16,16 @@ args = parser.parse_args()
 if __name__ == '__main__':
     dataset = 'THUCNews'  # 数据集
 
-    # 搜狗新闻:embedding_SougouNews.npz, 腾讯:embedding_Tencent.npz, 随机初始化:random
+    # 用第三方训练好的词嵌入模型：因为文本信息具有含义不变性
+    # 搜狗新闻: embedding_SougouNews.npz, 
+    # 腾讯: embedding_Tencent.npz, 
+    # 随机初始化: random
     embedding = 'embedding_SougouNews.npz'
     if args.embedding == 'random':
         embedding = 'random'
-    model_name = args.model  #TextCNN, TextRNN,
+    
+    # TextCNN, TextRNN,
+    model_name = args.model  
     if model_name == 'FastText':
         from utils_fasttext import build_dataset, build_iterator, get_time_dif
         embedding = 'random'
@@ -29,6 +34,7 @@ if __name__ == '__main__':
 
     x = import_module('models.' + model_name)
     config = x.Config(dataset, embedding)
+    # 只要seed一致，每次随机的结果也是一致的
     np.random.seed(1)
     torch.manual_seed(1)
     torch.cuda.manual_seed_all(1)
