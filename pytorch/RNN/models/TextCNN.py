@@ -60,6 +60,7 @@ class Model(nn.Module):
     def forward(self, x):
         #print (x[0].shape)
         out = self.embedding(x[0])
+        # 文本数据没有颜色通道，[c,h,w] 手动加上一个通道
         out = out.unsqueeze(1)
         out = torch.cat([self.conv_and_pool(out, conv) for conv in self.convs], 1)
         out = self.dropout(out)
