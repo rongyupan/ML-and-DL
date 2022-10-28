@@ -5,6 +5,7 @@
 简单的GAN网络理解
 """
 
+import os
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
@@ -19,6 +20,7 @@ class Generator(nn.Module):
 
         def block(in_feat, out_feat, normalize=True):
             layers = [nn.Linear(in_feat, out_feat)]
+            # 随机初始化一些特征
             if normalize:
                 layers.append(nn.BatchNorm1d(out_feat, 0.8))
             layers.append(nn.LeakyReLU(0.2, inplace=True))
@@ -30,6 +32,7 @@ class Generator(nn.Module):
             *block(128, 256),
             *block(256, 512),
             *block(512, 1024),
+            # 输入是784，最后也要还原到这个值
             nn.Linear(1024, 784),
             nn.Tanh()
         )
@@ -49,6 +52,7 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(512, 256),
             nn.LeakyReLU(0.2, inplace=True),
+            # 最后输出单标签
             nn.Linear(256, 1),
             nn.Sigmoid(),
         )
@@ -81,7 +85,7 @@ def start():
     discriminator.to(device)
     dataloader = torch.utils.data.DataLoader(
         datasets.MNIST(
-            "./data/mnist",
+            "../../CNN/data",
             train=True,
             download=True,
             transform=transforms.Compose(
@@ -98,20 +102,24 @@ def start():
     epochs = 100
     for epoch in range(epochs):
         for i, (imgs, _) in enumerate(dataloader):
+            # generator产生的结果的标签都是0，训练数据的标签都是1
             valid = torch.ones((imgs.size(0), 1), requires_grad=False)
             fake = torch.zeros((imgs.size(0), 1), requires_grad=False)
 
             rand_image = torch.randn((imgs.size(0), 100))
             rand_image.to(device)
             fake_imgs = generator(rand_image)
+            fake_imgs.to(device)
 
             optimizer_G.zero_grad()
             # 生成器就是让生成的图片更倾向于真，所以这里的损失函数是与valid进行对比
+            # 生成器最佳结果就是骗过了判别器
             g_loss = adversarial_loss(discriminator(fake_imgs), valid)
             g_loss.backward()
             optimizer_G.step()
 
             optimizer_D.zero_grad()
+            # 判别器不仅要学习假的是假的，也要学习真的如何为真
             real_loss = adversarial_loss(discriminator(imgs), valid)
             fake_loss = adversarial_loss(discriminator(fake_imgs), fake)
             d_loss = (real_loss + fake_loss) / 2
@@ -133,4 +141,5 @@ if __name__ == '__main__':
     #     "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
     #     % (1, 100, 10, 100, 5.00, 8.00)
     # )
-    print("[Epoch {:.0f}/{:.0f}] [Batch {:.0f}/{:.0f}] [D loss: {:.3f}] [G loss: {:.3f}]".format(1, 100, 10, 100, 5, 8))
+    # print("[Epoch {:.0f}/{:.0f}] [Batch {:.0f}/{:.0f}] [D loss: {:.3f}] [G loss: {:.3f}]".format(1, 100, 10, 100, 5, 8))
+    start()
