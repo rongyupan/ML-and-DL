@@ -16,7 +16,7 @@ from trainer.trainer import Trainer
 # 保证随机状态一致
 SEED = 42
 torch.manual_seed(SEED)
-# 下面这两个都是针对GPU的，提升速度和避免随机性
+# 下面这两个都是针对GPU的，保证种子相同时随机状态一致；提升速度和避免随机性
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)

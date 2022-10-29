@@ -12,6 +12,7 @@ class C3D(nn.Module):
         super(C3D, self).__init__()
 
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        # 不希望压缩帧数，所以第一个参数为 1
         self.pool1 = nn.MaxPool3d(kernel_size=(1, 2, 2), stride=(1, 2, 2))
 
         self.conv2 = nn.Conv3d(64, 128, kernel_size=(3, 3, 3), padding=(1, 1, 1))
